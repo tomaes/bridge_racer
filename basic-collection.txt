@@ -1,0 +1,171 @@
+ 
+ 
+ Something from nothing: Commodore Basic v2.0 revisited
+
+ by Thomas Gruetzmacher (http://tomaes.32x.de)
+ 
+ To run most of these games & tools without any modifications you need "CBM studio PRG",
+ a freeware IDE targeting old CBM machines.
+ 
+ Licence: Public domain.
+
+-------------------------------------------------------------------------------------------------
+
+10 rem *
+12 rem * joystick port test, press <space> to switch between ports #1 and #2
+13 rem *
+20 p=56320:s=0
+30 print" {return*2}{cyan} joystick (#"str$(2-s)") port"p+s"{return*2}"
+40 j=peek(p+s): print"{up*2}{light gray} 0  1  2  3  4  5  6  7  val{light blue}"
+50 geta$:if a$=" " then s=abs(s-1):print"{up*4}";:goto 30
+60 print abs((jand1)>0)abs((jand2)>0)abs((jand4)>0)abs((jand8)>0);
+70 print abs((jand16)>0)abs((jand32)>0)abs((jand64)>0)abs((jand128)>0);j
+80 goto 40
+
+-------------------------------------------------------------------------------------------------
+
+10 rem * analogue mouse test tool
+12 rem * - movement detection by polling SID registers s+25/26 (aka the paddle control reg.)
+14 rem * - left/right buttons detection by polling control port #1
+15 rem *
+16 s=54272: js=56321
+18 print"{reverse on}{down}analogue mouse test{reverse off}{down*4}"
+20 y$="{light gray}yes{light blue}":n$="{gray}no {light blue}"
+22 h$=n$: v$=n$: lmb$=n$: rmb$=n$
+24 ho=peek(s+25):vo=peek(s+26)
+26 fori=.to39:next
+28 if ho<>peek(s+25) then h$=y$
+30 if vo<>peek(s+26) then v$=y$
+32 j=peek(js)
+34 if j=239 then lmb$=y$
+36 if j=254 then rmb$=y$
+38 if j=238 then lmb$=y$: rmb$=y$
+40 print"{up*4}movement horizontal:"h$
+42 print"movement vertical  :"v$
+44 print"mouse button left  :"lmb$
+46 print"mouse button right :"rmb$
+48 goto22
+
+-------------------------------------------------------------------------------------------------
+
+0 rem *
+1 rem * typefaster
+2 rem * one line of code mini game ;)
+3 rem *
+4 c$=chr$(65+rnd(.)*26):printc$"?";:fori=sto4^5:next:s=s+9:geta$:printa$:ifa$=c$thengoto4
+
+-------------------------------------------------------------------------------------------------
+
+0 rem *
+1 rem * femto racer
+2 rem * mini game. press <space> (or not) to stay on the road
+3 rem *
+6 printspc(9+sin(f)*6+6+sin(f*2)*5)"{white}:      {green}:{gray}"m:f=f+.1:geta$:p=p+(a$=" ")*2+1
+8 q=4^5+p:m=m+1:ifpeek(q)<>58thenpokeq,22:goto6
+
+-------------------------------------------------------------------------------------------------
+
+0 rem *
+1 rem * chr$(32) action / aka dodge!
+2 rem * mini game. use joystick in port #2 
+3 rem * (commented version)
+4 rem *
+
+7  : rem ---------------------------------------------------
+8  : rem -- show top bar; init screen and vars
+9  : rem ---------------------------------------------------
+
+10 print"{clear}{down*8}{14}{red}dodge!{light blue}{return}{reverse on}{162*21}";:s=54296
+20 sc=1024:py=0:lv=3:w=40:t=10:ti$="000000":js=56320:poke53280,6:cl=646:zz=198
+
+27 : rem ---------------------------------------------------
+28 : rem -- joystick #2 polling (up/down), curb player pos
+29 : rem ---------------------------------------------------
+
+30 j=peek(56320)and3:if(j<>3)thenpy=py-(j=1)+(j=2):py=pyand7
+
+35 : rem ---------------------------------------------------
+36 : rem -- player, enemy ship, click sfx (fast volume on/off)
+37 : rem ---------------------------------------------------
+
+40 sp=sc+(t+py)*w+t:pokesp,62:pokesc+(t+int(rnd(.)*8))*w+19,w:pokes,2:pokes,.
+
+41 : rem ---------------------------------------------------
+42 : rem -- 'fast' horizontal scrolling by <del key> token
+43 : rem ---------------------------------------------------
+
+50 print"{home}{down*9}":fori=.to7:print" {delete} ":next:print
+
+51 : rem ---------------------------------------------------
+52 : rem -- collision detection; red status flash, sound fx
+53 : rem ---------------------------------------------------
+
+60 ifpeek(sp)<>32thenlv=lv-1:pokecl,2:pokes,9:pokes,.
+
+62 : rem ---------------------------------------------------
+63 : rem -- use the system timer (ti$) as score counter and 
+64 : rem -- str$() to avoid an 'unreversed' space char by
+65 : rem -- printing an integer; then loop if needed
+66 : rem ---------------------------------------------------
+
+70 print"{up}{reverse on}>"str$(lv)"{space*12}"ti$"{light blue}":iflv>.thengoto30
+
+71 : rem ---------------------------------------------------
+72 : rem -- no lives left? ohnoes! the end.
+73 : rem ---------------------------------------------------
+
+80 print"{up}{reverse on}game over,score:":pokezz,.:waitzz,1:run
+
+-------------------------------------------------------------------------------------------------
+
+0 rem todo: - <return> rotate sprite colors, fix movement, del hlp screen
+10 x=0: y=0: sm=1024: cm=55296: sc=53280: js=56320
+20 ox=0: oy=2: pc=cm+oy*40+ox: dim co(8): fori=.to7:co(i)=8+i:next
+30 pokesc,6:pokesc+1,6
+40 print"{clear}{light blue}{14}Spreight:v1.0:{yellow}?{light blue}=Help";
+50 print"{home}{down}{light blue}":fori=.to21:print"{@*24}":next:print"{home}{down}";
+60 print"{home}{down}{reverse on}";:fori=.to7:poke646,co(i):printstr$(i+1);"{188}";:next
+70 :
+80 wait198,1:geta$:pokepc,11:pt=sm+(y+oy)*40+x+ox:pc=cm+(y+oy)*40+x+ox
+110 v=val(a$):ifv>=1andv<=8thenpokept,48+v
+120 ifa$="a"thenco(0)=(co(0)+1)and15:goto60
+121 ifa$="s"thenco(1)=(co(1)+1)and15:goto60
+122 ifa$="d"thenco(2)=(co(2)+1)and15:goto60
+123 ifa$="f"thenco(3)=(co(3)+1)and15:goto60
+124 ifa$="g"thenco(4)=(co(4)+1)and15:goto60
+125 ifa$="h"thenco(5)=(co(5)+1)and15:goto60
+126 ifa$="j"thenco(6)=(co(6)+1)and15:goto60
+127 ifa$="k"thenco(7)=(co(7)+1)and15:goto60
+128 ifa$=" "thenpokept,.
+130 ifa$="?"thengosub260
+137 ifa$=chr$(133)thenud=1:gosub200
+150 ifa$="{up}"andy>.theny=y-1
+160 ifa$="{down}"andy<21theny=y+1
+170 ifa$="{left}"andx>.thenx=x-1
+180 ifa$="{right}"andx<23thenx=x+1
+190 pokepc,1:poke198,.:ifa$<>chr$(95)thengoto80
+196 pokesc,14:pokesc+1,6:print"{clear}{light blue}{142}":end
+200 :
+205 l$="":sp$="    ":print"{reverse off}{light blue}":ud=ud+48
+206 fork=2to23:km=k*40:forj=.to23step8:b=.:fori=.to7
+210 b=b+(2^(7-i)-1)*abs(peek(sm+i+j+km)=ud):next
+211 b$=str$(b):l$=l$+left$(sp$,4-len(b$))+b$:next
+212 poke211,24:poke214,k:sys58732:printl$;:l$="":nextk
+240 return
+250 :
+260 print"{reverse off}{home}{right*25}Quick Help"
+262 print"{right*25}{183*10}"
+264 print"{right*25}{gray}Cursor Keys"
+266 print"{right*25}{light blue}move around{down}"
+268 print"{right*25}{gray}<a>..<k> row"
+270 print"{right*25}{light blue}chng Spr.Col{down}"
+272 print"{right*25}{gray}<1>..<8> row"
+274 print"{right*25}{light blue}set Spr.Col{down}"
+276 print"{right*25}{gray}<F1>..<F8>"
+278 print"{right*25}{light blue}calc Spr.Data{down}"
+280 print"{right*25}{gray}<Space>"
+282 print"{right*25}{light blue}del Spr.Pix{down}"
+284 print"{right*25}{gray}<Return>"
+286 print"{right*25}{dark gray}rotate Colors{down}"
+288 print"{right*25}{gray}<{arrow left}>"
+290 print"{right*25}{light blue}exit"
